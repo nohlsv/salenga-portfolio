@@ -1,0 +1,11 @@
+{
+  "canisters": {
+    "icp_simple_site": {
+      "frontend": {
+        "entrypoint": "src/index.html"
+      },
+      "source": ["src"],
+      "type": "assets"
+    }
+  }
+}
