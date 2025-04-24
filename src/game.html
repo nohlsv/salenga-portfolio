@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game</title>
+  <style>
+    .board { display: grid; grid-template-columns: repeat(10, 30px); grid-gap: 1px; }
+    .tile { width: 30px; height: 30px; text-align: center; line-height: 30px; cursor: pointer; border: 1px solid black; }
+    .tile:hover { opacity: 0.7; }
+    .tile.plate { background-color: #52A31F; }
+    .tile.player { background-color: #FA1805; color: white; }
+    .tile.box { background-color: #6E310B; color: white; }
+    .tile.wall { background-color: #362847; color: white; }
+    .tile.air { background-color: #FADEDB; }
+    .tile.platedplayer { background-color: #FA1805; text-decoration: underline; }
+    .tile.platedbox { background-color: #6E310B; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div id="gameBoard" class="board"></div>
+  <div>
+    <button id="resetButton">Reset</button>
+    <button id="undoButton">Undo</button>
+  </div>
+  <div>
+    <button onclick="movePlayer('ArrowUp')">🢁</button>
+    <button onclick="movePlayer('ArrowLeft')">🢀</button>
+    <button onclick="movePlayer('ArrowDown')">🢃</button>
+    <button onclick="movePlayer('ArrowRight')">🢂</button>
+  </div>
+
+  <script>
+    const color = {
+      "ඞ": '#FA1805',
+      ".": '#FADEDB',
+      "#": '#362847',
+      "O": '#6E310B',
+      "_": '#52A31F',
+    };
+
+    const GAME = {
+      PLAYER: "ඞ",
+      AIR: ".",
+      WALL: "#",
+      BOX: "O",
+      PLATE: "_",
+      PLATEDPLAYER: "ඞ_",
+      PLATEDBOX: "O_",
+    };
+
+    class Vec2 {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+      }
+
+      add(b) {
+        return new Vec2(this.x + b.x, this.y + b.y);
+      }
+
+      toString() {
+        return `${this.x}, ${this.y}`;
+      }
+
+      static negate(v) {
+        return new Vec2(-v.x, -v.y);
+      }
+
+      static ZERO = new Vec2(0, 0);
+    }
+
+    const WIDTH = 10;
+    const HEIGHT = 10;
+
+    class GameState {
+        constructor(width = WIDTH, height = HEIGHT) {
+            this.map = [...Array(height)].map(() => Array(width).fill("."));
+            this.player = new Vec2(0, 0);
+            this.map[0][0] = GAME.PLAYER;
+            this.sideEffect = undefined;
+        }
+
+        load(map) {
+        this.map = map;  // Split each row into an array of characters
+        this.getPlayer();  // Update the player position after loading
+        return this;
+        }
+
+        load_weak(map) {
+        this.map = map.map;  // Split each row into an array of characters
+        this.getPlayer();  // Update the player position after loading
+        return this;
+        }
+
+
+
+        get_map() {
+            return this.map;
+        }
+
+        move(dir, from) {
+            const newGame = new GameState().load(this.map);
+
+            if (from) {
+            newGame._move(from, dir);
+            newGame.getPlayer();
+            return [newGame, undefined];
+            }
+
+            if (!newGame.player) return [newGame, undefined];
+
+            if (newGame._move(newGame.player, dir)) {
+            newGame.getPlayer();
+            return [newGame, newGame.sideEffect];
+            }
+
+            return [newGame, undefined];
+        }
+
+        _move(pos, dir) {
+            const newPos = pos.add(dir);
+            const newEl = this.get(newPos)?.charAt(0);
+
+            if (newEl == GAME.WALL) return false;
+            if (newEl == GAME.AIR || newEl == GAME.PLATE) {
+            this.place(pos, newPos);
+            this.sideEffect = newPos;
+            return true;
+            }
+
+            if (newEl == GAME.BOX || newEl == GAME.PLAYER) {
+            if (this._move(newPos, dir)) {
+                this.place(pos, newPos);
+                return true;
+            }
+            }
+
+            return false;
+        }
+
+        place(pos, newPos) {
+            let el = this.get(pos).charAt(0);
+            let elg = this.get(pos).slice(1);
+            let ng = this.get(newPos);
+            this.set(pos, elg);
+            this.set(newPos, el + ng);
+        }
+
+        get(pos) {
+            return this.map[pos.y]?.[pos.x];
+        }
+
+        set(pos, val) {
+            if (!val.includes(GAME.AIR)) {
+            val += GAME.AIR;
+            }
+            this.map = structuredClone(this.map);
+            let row = this.map[pos.y].split('');
+  
+            // Update the character at the specified position
+            row[pos.x] = val;
+            
+            // Convert the array back to a string and update the map
+            this.map[pos.y] = row.join('');
+        }
+
+        getPlayer() {
+            this.player = undefined;
+            for (let y = 0; y < this.map.length; y++) {
+            const row = this.map[y];
+            for (let x = 0; x < row.length; x++) {
+                const el = row[x];
+                if (el.charAt(0) == GAME.PLAYER) {
+                this.player = new Vec2(x, y);
+                }
+            }
+            }
+        }
+        }
+
+
+    const GameMaps = [
+      [
+        "########",
+        "#......#",
+        "#.ඞ.O._#",
+        "#......#",
+        "########",
+      ],
+      [
+        "########",
+        "#....#.#",
+        "#.ඞ.O#_#",
+        "#......#",
+        "#......#",
+        "########",
+      ],
+      [
+        "########",
+        "#....#.#",
+        "#.ඞ#O#_#",
+        "#.#....#",
+        "#......#",
+        "########",
+      ],
+      [
+        "########",
+        "###_####",
+        "###O.O_#",
+        "#_.Oඞ###",
+        "####O###",
+        "####_###",
+        "########",
+      ],
+      [
+        "########",
+        "###...##",
+        "#ඞ....##",
+        "###.O_##",
+        "#_##O.##",
+        "#.#._..#",
+        "#O_OOO_#",
+        "#..._..#",
+        "########",
+      ]
+    ];
+
+    let gameState = new GameState();
+    gameState.load(GameMaps[0]);
+
+    const renderGame = () => {
+      const board = document.getElementById("gameBoard");
+      board.innerHTML = "";
+      gameState.get_map().forEach((row, i) => {
+        row.split('').forEach((el, j) => {
+          const tile = document.createElement('div');
+          tile.classList.add('tile');
+          tile.style.backgroundColor = color[el];
+          tile.textContent = el;
+          tile.onclick = () => {
+            // Handle tile click logic if necessary
+          };
+          board.appendChild(tile);
+        });
+      });
+    };
+
+    const movePlayer = (direction) => {
+      const dirMap = {
+        'ArrowUp': new Vec2(0, -1),
+        'ArrowDown': new Vec2(0, 1),
+        'ArrowLeft': new Vec2(-1, 0),
+        'ArrowRight': new Vec2(1, 0),
+      };
+
+      const dir = dirMap[direction];
+      if (dir) {
+        const [newState] = gameState.move(dir);
+        gameState = newState;
+        renderGame();
+      }
+    };
+
+    document.getElementById('resetButton').onclick = () => {
+      gameState = new GameState();
+      gameState.load(GameMaps[0]);
+      renderGame();
+    };
+
+    renderGame();
+  </script>
+</body>
+</html>

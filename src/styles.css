@@ -1,0 +1,58 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #1e1e1e;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #2c2c2c;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.among-us img {
+    width: 250px;
+    height: auto;
+}
+
+.text-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.text-content p {
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#start-button {
+    display: block;
+    margin: 0 auto;
+    background-color: #ff4444;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+#start-button:hover {
+    background-color: #ff2222;
+}
